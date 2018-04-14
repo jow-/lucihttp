@@ -5,7 +5,7 @@ PROJECT(liblucihttp C)
 OPTION(BUILD_LUA "build Lua binding" ON)
 OPTION(BUILD_TESTS "build test programs" ON)
 
-ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations -Wno-format-truncation ${LUA_CFLAGS})
+ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations -Wno-format-truncation)
 
 SET(CMAKE_SHARED_LIBRARY_LINK_C_FLAGS "")
 
@@ -16,6 +16,10 @@ ADD_LIBRARY(liblucihttp SHARED
 	lib/utils.c
 	lib/multipart-parser.c
 	lib/urlencoded-parser.c)
+
+SET_TARGET_PROPERTIES(liblucihttp PROPERTIES
+	OUTPUT_NAME lucihttp
+	PREFIX lib)
 
 INSTALL(TARGETS
 	liblucihttp
@@ -46,6 +50,8 @@ IF(BUILD_LUA)
 			MESSAGE(SEND_ERROR "Lua was not found on your system")
 		ENDIF()
 	ENDIF()
+
+	ADD_DEFINITIONS(${LUA_CFLAGS})
 
 	ADD_LIBRARY(liblucihttp-lua SHARED
 		lib/lua.c)
