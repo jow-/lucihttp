@@ -1,0 +1,10 @@
+Content-Type: multipart/form-data; boundary=---------------------------562799544205627871454489104
+X-Expect-Error: At start of boundary, byte offset 0, expected '-' but got '\r'
+X-Comment: The redundant \r\n sequence before the first boundary should trigger an error
+
+
+-----------------------------562799544205627871454489104
+Content-Disposition: form-data; name="test"
+
+test
+-----------------------------562799544205627871454489104--

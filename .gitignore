@@ -1,0 +1,8 @@
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+*.so
+test-utils
+test-multipart-parser
+test-urlencoded-parser

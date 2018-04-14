@@ -1,0 +1,4 @@
+Content-Length: 20
+Content-Type: application/x-www-form-urlencoded
+
+foo=set&bar=&baz=set
