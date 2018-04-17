@@ -75,7 +75,7 @@ lh_L_mpart_cb(struct lh_mpart *p, enum lh_mpart_callback_type type,
 static int
 lh_L_mpart_new(lua_State *L)
 {
-	const char *boundary_header = luaL_checkstring(L, 1);
+	const char *boundary_header = luaL_optstring(L, 1, NULL);
 	struct lh_L_mpart *pu;
 	struct lh_mpart *p;
 
@@ -84,6 +84,14 @@ lh_L_mpart_new(lua_State *L)
 	if (!p) {
 		lua_pushnil(L);
 		lua_pushstring(L, "Out of memory");
+		return 2;
+	}
+
+	if (!boundary_header ||
+	    !lh_mpart_parse_boundary(p, boundary_header, NULL)) {
+		lh_mpart_free(p);
+		lua_pushnil(L);
+		lua_pushstring(L, "Invalid boundary value");
 		return 2;
 	}
 
@@ -98,7 +106,6 @@ lh_L_mpart_new(lua_State *L)
 	lua_setmetatable(L, -2);
 
 	lh_mpart_set_callback(p, lh_L_mpart_cb, pu);
-	lh_mpart_parse_boundary(p, boundary_header, NULL);
 
 	if (lua_type(L, 2) == LUA_TFUNCTION) {
 		lua_pushvalue(L, 2);
