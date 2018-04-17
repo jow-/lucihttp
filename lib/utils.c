@@ -21,8 +21,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <ctype.h>
-
-#include <stdio.h> /* XXX: remove */
 #include <string.h>
 
 static const char *hexdigits = "0123456789ABCDEF";
