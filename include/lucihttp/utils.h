@@ -30,7 +30,8 @@ enum lh_urlencode_flags {
 enum lh_urldecode_flags {
 	LH_URLDECODE_STRICT     = (1 << 0),
 	LH_URLDECODE_IF_NEEDED  = (1 << 1),
-	LH_URLDECODE_KEEP_PLUS  = (1 << 2)
+	LH_URLDECODE_KEEP_PLUS  = (1 << 2),
+	LH_URLDECODE_PLUS       = (1 << 3)
 };
 
 char *lh_urlencode(const char *, size_t, size_t *, unsigned int);

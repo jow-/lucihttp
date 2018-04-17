@@ -156,10 +156,15 @@ lh_urlencode(const char *s, size_t len, size_t *encoded_len,
  *
  *  LH_URLDECODE_KEEP_PLUS
  *  Do not decode plus ('+') characters into spaces, instead keep them as-is.
+ *  This is the default behaviour and the value is only kept for backwards
+ *  compatibility.
  *
  *  LH_URLDECODE_IF_NEEDED
  *  Only return a string if any actual decoding was nescessary, otherwise
  *  return NULL but still set the length pointer.
+ *
+ *  LH_URLDECODE_PLUS
+ *  Decode plus ('+') characters into spaces instead of keeping them.
  */
 
 char *
@@ -183,7 +188,7 @@ lh_urldecode(const char *s, size_t len, size_t *decoded_len,
 				return NULL;
 			}
 		}
-		else if ((s[i] == '+') && !(flags & LH_URLDECODE_KEEP_PLUS)) {
+		else if ((s[i] == '+') && (flags & LH_URLDECODE_PLUS)) {
 			changed = true;
 		}
 	}
@@ -206,7 +211,7 @@ lh_urldecode(const char *s, size_t len, size_t *decoded_len,
 				*ptr++ = (char)(16 * hex_to_dec(s[i+1]) + hex_to_dec(s[i+2]));
 				i += 2;
 			}
-			else if ((s[i] == '+') && !(flags & LH_URLDECODE_KEEP_PLUS)) {
+			else if ((s[i] == '+') && (flags & LH_URLDECODE_PLUS)) {
 				*ptr++ = ' ';
 			}
 			else {
