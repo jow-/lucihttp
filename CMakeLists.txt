@@ -68,7 +68,7 @@ IF(BUILD_LUA)
 
 	INSTALL(FILES
 		include/lucihttp/lua.h
-		DESTINATION include)
+		DESTINATION include/lucihttp)
 ENDIF()
 
 
