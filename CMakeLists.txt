@@ -29,7 +29,7 @@ INSTALL(FILES
 	include/lucihttp/utils.h
 	include/lucihttp/multipart-parser.h
 	include/lucihttp/urlencoded-parser.h
-	DESTINATION include)
+	DESTINATION include/lucihttp)
 
 
 IF(BUILD_LUA)
