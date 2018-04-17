@@ -23,6 +23,10 @@
 #include <ctype.h>
 #include <string.h>
 
+#ifndef EOF
+# define EOF (-1)
+#endif
+
 static const char *hexdigits = "0123456789ABCDEF";
 
 static inline bool
