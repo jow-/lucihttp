@@ -74,7 +74,7 @@ lh_mpart_dump(FILE *fp, const char *prefix, const char *buf, size_t len)
 {
 	size_t i;
 
-	fprintf(fp, "%s=(%ld)[", prefix, len);
+	fprintf(fp, "%s=(%lu)[", prefix, (unsigned long)len);
 
 	for (i = 0; i < len; i++)
 		fprintf(fp, "%c", buf[i] < 0x20 ? '.' : buf[i]);
@@ -228,9 +228,9 @@ lh_mpart_error(struct lh_mpart *p, size_t off, const char *fmt, ...)
 	va_end(ap);
 
 	if (rv != -1) {
-		rv = asprintf(&p->error, "At %s, byte offset %ld, %s",
+		rv = asprintf(&p->error, "At %s, byte offset %lu, %s",
 		              lh_mpart_state_descriptions[p->state],
-		              p->total + off, msg);
+		              (unsigned long)(p->total + off), msg);
 		free(msg);
 	}
 
