@@ -410,7 +410,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				                buf + p->offset, namelen);
 			}
 
-			if (!buffer_end) {
+			if (c == ':') {
 				lh_mpart_set_state(p, LH_MP_S_HEADER_VALUE_START);
 				p->flags |= LH_MP_F_PAST_NAME;
 			}
@@ -471,7 +471,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				                buf + p->offset, valuelen);
 			}
 
-			if (!buffer_end)
+			if (c == '\r')
 				lh_mpart_set_state(p, LH_MP_S_HEADER_VALUE_END);
 		}
 
@@ -521,7 +521,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				}
 			}
 
-			if (!buffer_end) {
+			if (c == '\r') {
 				p->offset = off;
 				p->lookbehind[0] = c;
 				lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY_START);
@@ -531,9 +531,10 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 		break;
 
 	case LH_MP_S_PART_BOUNDARY_START:
+		p->lookbehind[1] = c;
+
 		if (c == '\n') {
 			p->index = 0;
-			p->lookbehind[1] = c;
 			lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY);
 		}
 		else {
@@ -541,20 +542,20 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				if (p->flags & LH_MP_F_BUFFERING) {
 					lh_mpart_get_token(p, LH_MP_T_DATA, &l);
 
-					if (l + 1 > LH_MP_T_SIZE_LIMIT)
+					if (l + 2 > LH_MP_T_SIZE_LIMIT)
 						return lh_mpart_error(p, off,
 						                      "the value exceeds the "
 						                      "maximum allow size");
 
 					lh_mpart_set_token(p, LH_MP_T_DATA, false,
-					                   p->lookbehind, 1);
+					                   p->lookbehind, 2);
 				}
 				else {
-					lh_mpart_invoke(p, PART_DATA, p->lookbehind, 1);
+					lh_mpart_invoke(p, PART_DATA, p->lookbehind, 2);
 				}
 			}
 
-			p->offset = off - 1;
+			p->offset = off + 1;
 			lh_mpart_set_state(p, LH_MP_S_PART_DATA);
 		}
 
@@ -581,8 +582,10 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				}
 			}
 
-			p->offset = off;
-			lh_mpart_set_state(p, LH_MP_S_PART_DATA);
+			p->lookbehind[0] = c;
+			p->index = 0;
+
+			lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY_START);
 		}
 		else {
 			p->lookbehind[p->index + 2] = c;
