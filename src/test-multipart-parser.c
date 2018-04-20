@@ -17,7 +17,9 @@
  */
 
 #include <lucihttp/multipart-parser.h>
+#include <lucihttp/utils.h>
 
+#include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -26,12 +28,123 @@
 #include <sys/types.h>
 
 
+struct test_context {
+	bool is_file;
+	char *header;
+	char *expect_error;
+	char *expect_pname;
+	char *expect_pvalue;
+	char *expect_hname;
+	char *expect_hvalue;
+	bool matched_error;
+	bool matched_pname;
+	bool matched_pvalue;
+	bool matched_hname;
+	bool matched_hvalue;
+};
+
+static void xfree(void *p)
+{
+	if (p)
+		free(p);
+}
+
+static char *memdup(const char *data, char **copy, size_t len)
+{
+	xfree(*copy);
+
+	if (!data || !len)
+		return NULL;
+
+	*copy = calloc(1, len + 1);
+
+	if (!*copy)
+		return NULL;
+
+	memcpy(*copy, data, len);
+
+	return *copy;
+}
+
+static bool test_callback(struct lh_mpart *p,
+                          enum lh_mpart_callback_type type,
+                          const char *buffer, size_t length, void *priv)
+{
+	char *tok = NULL, *name = NULL, *file = NULL;
+	struct test_context *ctx = priv;
+
+	switch (type)
+	{
+	case LH_MP_CB_HEADER_NAME:
+		memdup(buffer, &ctx->header, length);
+
+		if (ctx->header && ctx->expect_hname &&
+		    !strcasecmp(ctx->header, ctx->expect_hname))
+		    ctx->matched_hname = true;
+
+		break;
+
+	case LH_MP_CB_HEADER_VALUE:
+		if (ctx->header && !strcasecmp(ctx->header, "content-disposition")) {
+			tok = lh_header_attribute(buffer, length, NULL, NULL);
+
+			if (!strcasecmp(tok, "form-data")) {
+				name = lh_header_attribute(buffer, length, "name", NULL);
+				file = lh_header_attribute(buffer, length, "filename", NULL);
+
+				if (name && ctx->expect_pname &&
+				    !strcmp(name, ctx->expect_pname))
+					ctx->matched_pname = true;
+
+				ctx->is_file = !!file;
+
+				xfree(name);
+				xfree(file);
+			}
+
+			xfree(tok);
+		}
+
+		if (buffer && ctx->expect_hvalue &&
+		    length == strlen(ctx->expect_hvalue) &&
+		    !memcmp(buffer, ctx->expect_hvalue, strlen(ctx->expect_hvalue)))
+		    ctx->matched_hvalue = true;
+
+		break;
+
+	case LH_MP_CB_PART_BEGIN:
+		/* only buffer non-file data */
+		return !ctx->is_file;
+
+	case LH_MP_CB_PART_DATA:
+		if (buffer && ctx->expect_pvalue &&
+		    length == strlen(ctx->expect_pvalue) &&
+		    !memcmp(buffer, ctx->expect_pvalue, strlen(ctx->expect_pvalue)))
+		    ctx->matched_pvalue = true;
+
+		break;
+
+	case LH_MP_CB_ERROR:
+		if (buffer && ctx->expect_error &&
+		    !strcmp(buffer, ctx->expect_error))
+		    ctx->matched_error = true;
+
+		break;
+
+	default:
+		break;
+	}
+
+	return true;
+}
+
 static int run_test(FILE *trace, const char *path)
 {
-	char *expect_error = NULL;
-	struct lh_mpart *p;
+	struct test_context ctx = { };
+	struct lh_mpart *p = NULL;
 	bool ok = true;
 	char line[128];
+	int rv = -1;
 	FILE *file;
 	size_t i;
 
@@ -41,14 +154,14 @@ static int run_test(FILE *trace, const char *path)
 
 	if (!file) {
 		fprintf(stderr, "Unable to open file: %s\n", strerror(errno));
-		return -1;
+		goto out;
 	}
 
 	p = lh_mpart_new(trace);
 
 	if (!p) {
 		fprintf(stderr, "Out of memory\n");
-		return -1;
+		goto out;
 	}
 
 	while (fgets(line, sizeof(line), file)) {
@@ -56,22 +169,55 @@ static int run_test(FILE *trace, const char *path)
 		    !lh_mpart_parse_boundary(p, line + 14, NULL)) {
 
 			fprintf(stderr, "Invalid boundary header\n");
-			lh_mpart_free(p);
-			return -1;
+			goto out;
 		}
-		else if (!strncmp(line, "X-Expect-Error: ", 16)) {
-			for (i = strlen(line) - 1; i > 0; i--)
-				if (line[i] != ' ' && line[i] != '\t' &&
-				    line[i] != '\r' && line[i] != '\n')
-					break;
+		else if (!strncmp(line, "X-Expect-", 9)) {
+			char *p = NULL, **q = NULL;
 
-			line[i + 1] = 0;
-			expect_error = strdup(line + 16);
+			if (!strncmp(line + 9, "Error:", 6)) {
+				p = line + 9 + 6;
+				q = &ctx.expect_error;
+			}
+			else if (!strncmp(line + 9, "Part-Name:", 10)) {
+				p = line + 9 + 10;
+				q = &ctx.expect_pname;
+			}
+			else if (!strncmp(line + 9, "Part-Value:", 11)) {
+				p = line + 9 + 11;
+				q = &ctx.expect_pvalue;
+			}
+			else if (!strncmp(line + 9, "Header-Name:", 12)) {
+				p = line + 9 + 12;
+				q = &ctx.expect_hname;
+			}
+			else if (!strncmp(line + 9, "Header-Value:", 13)) {
+				p = line + 9 + 13;
+				q = &ctx.expect_hvalue;
+			}
+
+			if (p && q) {
+				while (*p == ' ' || *p == '\t')
+					p++;
+
+				for (i = strlen(p) - 1; i > 0; i--)
+					if (p[i] != ' ' && p[i] != '\t' &&
+					    p[i] != '\r' && p[i] != '\n')
+						break;
+
+				p[i + 1] = 0;
+
+				if (!strncmp(p, "urlencoded:", 11))
+					*q = lh_urldecode(p + 11, strlen(p + 11), NULL, 0);
+				else
+					*q = strdup(p);
+			}
 		}
 		else if (!strcmp(line, "\r\n")) {
 			break;
 		}
 	}
+
+	lh_mpart_set_callback(p, test_callback, &ctx);
 
 	while ((i = fread(line, 1, sizeof(line), file)) > 0) {
 		ok = lh_mpart_parse(p, line, i);
@@ -83,33 +229,64 @@ static int run_test(FILE *trace, const char *path)
 	if (ok)
 		lh_mpart_parse(p, NULL, 0);
 
-	if (!expect_error && p->error) {
+	if (!ctx.expect_error && p->error) {
 		printf("ERROR: Expected parser to finish but got error:\n  [%s]\n",
 		       p->error);
 
-		lh_mpart_free(p);
-		return -1;
+		goto out;
 	}
-	else if (expect_error && !p->error) {
+	else if (ctx.expect_error && !p->error) {
 		printf("ERROR: Expected parser to error with\n  [%s]\n"
-		       "but it finished instead\n", expect_error);
+		       "but it finished instead\n", ctx.expect_error);
 
-		lh_mpart_free(p);
-		return -1;
+		goto out;
 	}
-	else if (expect_error && p->error) {
-		if (strcmp(expect_error, p->error)) {
-			printf("ERROR: Expected parser to error with\n  [%s]\n"
-			       "but got\n  [%s]\ninstead\n", expect_error, p->error);
+	else if (ctx.expect_error && !ctx.matched_error) {
+		printf("ERROR: Expected parser to error with\n  [%s]\n"
+		       "but got\n  [%s]\ninstead\n", ctx.expect_error, p->error);
 
-			lh_mpart_free(p);
-			return -1;
-		}
+		goto out;
+	}
+	else if (ctx.expect_pname && !ctx.matched_pname) {
+		printf("ERROR: Did not find expected part name [%s]\n",
+		       ctx.expect_pname);
+
+		goto out;
+	}
+	else if (ctx.expect_pvalue && !ctx.matched_pvalue) {
+		printf("ERROR: Did not find expected part value [%s]\n",
+		       ctx.expect_pvalue);
+
+		goto out;
+	}
+	else if (ctx.expect_hname && !ctx.matched_hname) {
+		printf("ERROR: Did not find expected header name [%s]\n",
+		       ctx.expect_hname);
+
+		goto out;
+	}
+	else if (ctx.expect_hvalue && !ctx.matched_hvalue) {
+		printf("ERROR: Did not find expected header value [%s]\n",
+		       ctx.expect_hvalue);
+
+		goto out;
 	}
 
 	printf("OK\n");
-	lh_mpart_free(p);
-	return 0;
+	rv = 0;
+
+out:
+	if (p)
+		lh_mpart_free(p);
+
+	xfree(ctx.header);
+	xfree(ctx.expect_error);
+	xfree(ctx.expect_pname);
+	xfree(ctx.expect_pvalue);
+	xfree(ctx.expect_hname);
+	xfree(ctx.expect_hvalue);
+
+	return rv;
 }
 
 static int run_tests(FILE *trace, const char *dir)
