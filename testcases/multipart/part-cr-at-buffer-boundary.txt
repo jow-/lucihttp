@@ -1,12 +1,12 @@
 Content-Type: multipart/form-data; boundary=---------------------------562799544205627871454489104
-Content-Length: 245
+Content-Length: 201
 X-Comment: Test case requires processing with 128 byte buffer
-X-Expect-Header-Name: X-Test-Header
+X-Expect-Part-Value: urlencoded:0123456789%0D%0Aabcdefghij%0D%0Aklmnopqrst
 
 -----------------------------562799544205627871454489104
-X-Padding: 0123456789012345678901234567890123456789012
-X-Test-Header: 1
 Content-Disposition: form-data; name="test"
 
-test
+0123456789
+abcdefghij
+klmnopqrst
 -----------------------------562799544205627871454489104--

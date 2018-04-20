@@ -1,9 +1,11 @@
 Content-Type: multipart/form-data; boundary=---------------------------562799544205627871454489104
-Content-Length: 222
+Content-Length: 242
 X-Comment: Test case requires processing with 128 byte buffer
+X-Expect-Header-Value: Test-Header-Value
 
 -----------------------------562799544205627871454489104
-X-Padding: 01234567890123
+X-Padding: 012345678901234567890123
+X-Test-Header: Test-Header-Value
 Content-Disposition: form-data; name="test"
 
 test
