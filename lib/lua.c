@@ -446,6 +446,9 @@ LUALIB_API int luaopen_lucihttp(lua_State *L) {
 	lua_pushnumber(L, LH_URLDECODE_KEEP_PLUS);
 	lua_setfield(L, -2, "DECODE_KEEP_PLUS");
 
+	lua_pushnumber(L, LH_URLDECODE_PLUS);
+	lua_setfield(L, -2, "DECODE_PLUS");
+
 	lua_pushvalue(L, -1);
 	lua_setfield(L, -1, "__index");
 
