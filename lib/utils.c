@@ -264,7 +264,7 @@ lh_header_attribute(const char *s, size_t len, const char *attr,
 
 		switch (state) {
 		case TYPE:
-			if (!valueptr && (c == ' ' || c == '\t'))
+			if (!valueptr && (c == ' ' || c == '\t' || c == EOF))
 				break;
 
 			if (c == ';' || c == '\r' || c == EOF) {
