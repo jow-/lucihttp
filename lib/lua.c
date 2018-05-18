@@ -78,8 +78,10 @@ lh_L_mpart_new(lua_State *L)
 	const char *boundary_header = luaL_optstring(L, 1, NULL);
 	struct lh_L_mpart *pu;
 	struct lh_mpart *p;
+	size_t limit;
 
 	p = lh_mpart_new(NULL);
+	limit = luaL_optnumber(L, 3, 0);
 
 	if (!p) {
 		lua_pushnil(L);
@@ -104,6 +106,9 @@ lh_L_mpart_new(lua_State *L)
 
 	luaL_getmetatable(L, LUCIHTTP_MPART_META);
 	lua_setmetatable(L, -2);
+
+	if (limit)
+		lh_mpart_set_size_limit(p, limit);
 
 	lh_mpart_set_callback(p, lh_L_mpart_cb, pu);
 
@@ -202,8 +207,10 @@ lh_L_urldec_new(lua_State *L)
 {
 	struct lh_L_urldec *pu;
 	struct lh_urldec *p;
+	size_t limit;
 
 	p = lh_urldec_new(NULL);
+	limit = luaL_optnumber(L, 2, 0);
 
 	if (!p) {
 		lua_pushnil(L);
@@ -220,6 +227,9 @@ lh_L_urldec_new(lua_State *L)
 
 	luaL_getmetatable(L, LUCIHTTP_URLDEC_META);
 	lua_setmetatable(L, -2);
+
+	if (limit)
+		lh_urldec_set_size_limit(p, limit);
 
 	lh_urldec_set_callback(p, lh_L_urldec_cb, pu);
 

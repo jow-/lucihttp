@@ -23,7 +23,7 @@
 #include <stdbool.h>
 
 
-#define LH_MP_T_SIZE_LIMIT 4096
+#define LH_MP_T_DEFAULT_SIZE_LIMIT 4096
 
 enum lh_mpart_state {
 	LH_MP_S_START = 0,
@@ -97,6 +97,7 @@ struct lh_mpart
 	size_t index;
 	size_t offset;
 	size_t total;
+	size_t size_limit;
 	char *error;
 	int nesting;
 	unsigned int flags;
@@ -112,6 +113,9 @@ lh_mpart_new(FILE *);
 
 void
 lh_mpart_set_callback(struct lh_mpart *, lh_mpart_callback, void *);
+
+void
+lh_mpart_set_size_limit(struct lh_mpart *, size_t);
 
 char *
 lh_mpart_parse_boundary(struct lh_mpart *, const char *, size_t *);

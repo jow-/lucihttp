@@ -254,6 +254,7 @@ lh_mpart_new(FILE *trace)
 
 	p->nesting = -1;
 	p->trace = trace;
+	p->size_limit = LH_MP_T_DEFAULT_SIZE_LIMIT;
 
 	lh_mpart_set_state(p, LH_MP_S_START);
 
@@ -265,6 +266,13 @@ lh_mpart_set_callback(struct lh_mpart *p, lh_mpart_callback cb, void *priv)
 {
 	p->cb = cb;
 	p->priv = priv;
+}
+
+void
+lh_mpart_set_size_limit(struct lh_mpart *p, size_t limit)
+{
+	if (limit >= 1024)
+		p->size_limit = limit;
 }
 
 char *
@@ -398,7 +406,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 			if (p->flags & LH_MP_F_BUFFERING) {
 				lh_mpart_get_token(p, LH_MP_T_HEADER_NAME, &l);
 
-				if (l + namelen > LH_MP_T_SIZE_LIMIT)
+				if (l + namelen > p->size_limit)
 					return lh_mpart_error(p, off, "the name exceeds the "
 					                              "maximum allowed size");
 
@@ -450,7 +458,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				lh_mpart_get_token(p, LH_MP_T_HEADER_VALUE, &l);
 
 				if (p->flags & LH_MP_F_MULTILINE) {
-					if (++l > LH_MP_T_SIZE_LIMIT)
+					if (++l > p->size_limit)
 						return lh_mpart_error(p, off,
 						                      "the value exceeds the "
 						                      "maximum allowed size");
@@ -459,7 +467,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 					                   " ", 1);
 				}
 
-				if (l + valuelen > LH_MP_T_SIZE_LIMIT)
+				if (l + valuelen > p->size_limit)
 					return lh_mpart_error(p, off, "the value exceeds the "
 					                              "maximum allowed size");
 
@@ -507,7 +515,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				if (p->flags & LH_MP_F_BUFFERING) {
 					lh_mpart_get_token(p, LH_MP_T_DATA, &l);
 
-					if (l + valuelen > LH_MP_T_SIZE_LIMIT)
+					if (l + valuelen > p->size_limit)
 						return lh_mpart_error(p, off,
 						                      "the value exceeds the "
 						                      "maximum allow size");
@@ -542,7 +550,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				if (p->flags & LH_MP_F_BUFFERING) {
 					lh_mpart_get_token(p, LH_MP_T_DATA, &l);
 
-					if (l + 2 > LH_MP_T_SIZE_LIMIT)
+					if (l + 2 > p->size_limit)
 						return lh_mpart_error(p, off,
 						                      "the value exceeds the "
 						                      "maximum allow size");
@@ -568,7 +576,7 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				if (p->flags & LH_MP_F_BUFFERING) {
 					lh_mpart_get_token(p, LH_MP_T_DATA, &l);
 
-					if (l + p->index + 2 > LH_MP_T_SIZE_LIMIT)
+					if (l + p->index + 2 > p->size_limit)
 						return lh_mpart_error(p, off,
 						                      "the value exceeds the "
 						                      "maximum allow size");

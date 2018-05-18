@@ -14,7 +14,7 @@ local function file_cb(file, data, length, eof)
 	else
 		-- the first invocation of the file callback for this part
 		if not file.fd then
-			file.fd = io.open("/dev/stdout", "w")		
+			file.fd = io.open("/dev/stdout", "w")
 		end
 
 		-- write buffer data to file
@@ -117,3 +117,35 @@ table.sort(keys)
 for _, key in ipairs(keys) do
 	print("Parameter:", key, "Value:", data[key])
 end
+
+
+--
+-- Test maximum chunk size enforcement
+--
+
+parser = lucihttp.multipart_parser("multipart/form-data; boundary=AaB03x",
+	function(what, buffer, length)
+		print(what, buffer, length)
+		return true
+	end, 1024)
+
+parser:parse("--AaB03x\r\nContent-Disposition: form-data; name=\"example\"\r\n\r\n")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")
+parser:parse("\r\n--AaB03x--\r\n")
+parser:parse(nil)

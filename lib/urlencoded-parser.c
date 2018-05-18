@@ -161,6 +161,7 @@ lh_urldec_new(FILE *trace)
 		return NULL;
 
 	p->trace = trace;
+	p->size_limit = LH_UD_T_DEFAULT_SIZE_LIMIT;
 
 	lh_urldec_set_state(p, LH_UD_S_NAME_START);
 
@@ -172,6 +173,13 @@ lh_urldec_set_callback(struct lh_urldec *p, lh_urldec_callback cb, void *priv)
 {
 	p->cb = cb;
 	p->priv = priv;
+}
+
+void
+lh_urldec_set_size_limit(struct lh_urldec *p, size_t limit)
+{
+	if (limit >= 1024)
+		p->size_limit = limit;
 }
 
 #define EOB (-2)
@@ -206,7 +214,7 @@ lh_urldec_step(struct lh_urldec *p, const char *buf, size_t off, int c)
 			if (p->flags & LH_UD_F_BUFFERING) {
 				lh_urldec_get_token(p, LH_UD_T_NAME, &l);
 
-				if (l + keylen > LH_UD_T_SIZE_LIMIT)
+				if (l + keylen > p->size_limit)
 					return lh_urldec_error(p, off, "the key exceeds the "
 					                               "maximum allowed size");
 
@@ -252,7 +260,7 @@ lh_urldec_step(struct lh_urldec *p, const char *buf, size_t off, int c)
 			if (p->flags & LH_UD_F_BUFFERING) {
 				lh_urldec_get_token(p, LH_UD_T_VALUE, &l);
 
-				if (l + vallen > LH_UD_T_SIZE_LIMIT)
+				if (l + vallen > p->size_limit)
 					return lh_urldec_error(p, off, "the value exceeds the "
 					                               "maximum allowed size");
 

@@ -23,7 +23,7 @@
 #include <stdbool.h>
 
 
-#define LH_UD_T_SIZE_LIMIT 4096
+#define LH_UD_T_DEFAULT_SIZE_LIMIT 4096
 
 enum lh_urldec_state {
 	LH_UD_S_NAME_START = 0,
@@ -72,6 +72,7 @@ struct lh_urldec
 	enum lh_urldec_state state;
 	size_t offset;
 	size_t total;
+	size_t size_limit;
 	char *error;
 	unsigned int flags;
 	struct lh_urldec_token token[__LH_UD_T_COUNT];
@@ -86,6 +87,9 @@ lh_urldec_new(FILE *);
 
 void
 lh_urldec_set_callback(struct lh_urldec *, lh_urldec_callback, void *);
+
+void
+lh_urldec_set_size_limit(struct lh_urldec *, size_t);
 
 bool
 lh_urldec_parse(struct lh_urldec *, const char *, size_t);
