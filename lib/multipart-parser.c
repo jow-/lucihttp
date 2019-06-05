@@ -590,10 +590,13 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				}
 			}
 
+			p->offset = off;
 			p->lookbehind[0] = c;
-			p->index = 0;
 
-			lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY_START);
+			if (c == '\r')
+				lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY_START);
+			else
+				lh_mpart_set_state(p, LH_MP_S_PART_DATA);
 		}
 		else {
 			p->lookbehind[p->index + 2] = c;

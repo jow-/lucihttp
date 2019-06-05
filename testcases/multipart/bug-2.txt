@@ -1,0 +1,11 @@
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary0IAtYXyyDSLQg8kg
+Content-Length: 155
+X-Comment: Test parsing single character without trailing newline (https://github.com/jow-/lucihttp/issues/2)
+X-Expect-Part-Value: urlencoded:A%0D%0AB
+
+------WebKitFormBoundary0IAtYXyyDSLQg8kg
+Content-Disposition: form-data; name="cbid.crontab.1.crons"
+
+A
+B
+------WebKitFormBoundary0IAtYXyyDSLQg8kg--
