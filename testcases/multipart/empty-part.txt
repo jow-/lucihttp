@@ -1,0 +1,10 @@
+Content-Type: multipart/form-data; boundary=---------------------------3229496401554762191931023752
+Content-Length: 167
+X-Comment: this test case should yield an empty part value
+X-Expect-Part-Value: urlencoded:
+
+-----------------------------3229496401554762191931023752
+Content-Disposition: form-data; name="test"
+
+
+-----------------------------3229496401554762191931023752--

@@ -607,7 +607,10 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 					hvalue = lh_mpart_get_token(p, LH_MP_T_DATA,
 					                            &valuelen);
 
-					lh_mpart_invoke(p, PART_DATA, hvalue, valuelen);
+					if (hvalue)
+						lh_mpart_invoke(p, PART_DATA, hvalue, valuelen);
+					else
+						lh_mpart_invoke(p, PART_DATA, "", 0);
 				}
 
 				lh_mpart_invoke(p, PART_END, NULL, 0);
