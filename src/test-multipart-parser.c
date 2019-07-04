@@ -25,6 +25,8 @@
 #include <errno.h>
 #include <libgen.h>
 #include <dirent.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h>
 
 
@@ -42,6 +44,9 @@ struct test_context {
 	bool matched_hname;
 	bool matched_hvalue;
 	size_t bufsize;
+	const char *dumpprefix;
+	unsigned int dumpcount;
+	int dumpfd;
 };
 
 static void xfree(void *p)
@@ -73,6 +78,7 @@ static bool test_callback(struct lh_mpart *p,
 {
 	char *tok = NULL, *name = NULL, *file = NULL;
 	struct test_context *ctx = priv;
+	char path[1024];
 
 	switch (type)
 	{
@@ -99,6 +105,19 @@ static bool test_callback(struct lh_mpart *p,
 
 				ctx->is_file = !!file;
 
+				if (ctx->is_file && ctx->dumpprefix) {
+					snprintf(path, sizeof(path), "%s.%u",
+					         ctx->dumpprefix, ctx->dumpcount);
+
+					ctx->dumpfd = open(path, O_WRONLY|O_CREAT|O_EXCL, 0644);
+
+					if (ctx->dumpfd < 0)
+						fprintf(stderr, "Unable to create file %s: %s\n",
+						        path, strerror(errno));
+					else
+						ctx->dumpcount++;
+				}
+
 				xfree(name);
 				xfree(file);
 			}
@@ -118,10 +137,20 @@ static bool test_callback(struct lh_mpart *p,
 		return !ctx->is_file;
 
 	case LH_MP_CB_PART_DATA:
-		if (buffer && ctx->expect_pvalue &&
+		if (buffer && ctx->dumpfd >= 0)
+			write(ctx->dumpfd, buffer, length);
+		else if (buffer && ctx->expect_pvalue &&
 		    length == strlen(ctx->expect_pvalue) &&
 		    !memcmp(buffer, ctx->expect_pvalue, strlen(ctx->expect_pvalue)))
 		    ctx->matched_pvalue = true;
+
+		break;
+
+	case LH_MP_CB_PART_END:
+		if (ctx->dumpfd >= 0) {
+			close(ctx->dumpfd);
+			ctx->dumpfd = -1;
+		}
 
 		break;
 
@@ -139,9 +168,14 @@ static bool test_callback(struct lh_mpart *p,
 	return true;
 }
 
-static int run_test(FILE *trace, const char *path)
+static int run_test(FILE *trace, const char *path, const char *dumpprefix)
 {
-	struct test_context ctx = { .bufsize = 128 };
+	struct test_context ctx = {
+		.bufsize = 128,
+		.dumpprefix = dumpprefix,
+		.dumpfd = -1
+	};
+
 	struct lh_mpart *p = NULL;
 	bool ok = true;
 	char line[4096];
@@ -321,7 +355,7 @@ static int run_tests(FILE *trace, const char *dir)
 		if (entry->d_type == DT_REG) {
 			snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name);
 
-			if (run_test(trace, path))
+			if (run_test(trace, path, NULL))
 				fails++;
 		}
 	}
@@ -340,10 +374,11 @@ int main(int argc, char **argv)
 {
 	const char *testfile = NULL;
 	const char *testdir = NULL;
+	const char *dumpprefix = NULL;
 	FILE *trace = NULL;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "vd:f:")) != -1) {
+	while ((opt = getopt(argc, argv, "vd:f:x:")) != -1) {
 		switch (opt) {
 		case 'v':
 			trace = stderr;
@@ -357,8 +392,12 @@ int main(int argc, char **argv)
 			testfile = optarg;
 			break;
 
+		case 'x':
+			dumpprefix = optarg;
+			break;
+
 		default:
-			fprintf(stderr, "Usage: %s [-v] {-d <dir>|-f <file>}\n",
+			fprintf(stderr, "Usage: %s [-v] {-d <dir>|[-x pfx] -f <file>}\n",
 			        argv[0]);
 
 			return 1;
@@ -369,7 +408,7 @@ int main(int argc, char **argv)
 		return run_tests(trace, testdir);
 	}
 	else if (testfile) {
-		return run_test(trace, testfile);
+		return run_test(trace, testfile, dumpprefix);
 	}
 
 	fprintf(stderr, "One of -d or -f is required\n");
