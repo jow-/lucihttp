@@ -41,6 +41,7 @@ struct test_context {
 	bool matched_pvalue;
 	bool matched_hname;
 	bool matched_hvalue;
+	size_t bufsize;
 };
 
 static void xfree(void *p)
@@ -140,10 +141,10 @@ static bool test_callback(struct lh_mpart *p,
 
 static int run_test(FILE *trace, const char *path)
 {
-	struct test_context ctx = { };
+	struct test_context ctx = { .bufsize = 128 };
 	struct lh_mpart *p = NULL;
 	bool ok = true;
-	char line[128];
+	char line[4096];
 	int rv = -1;
 	FILE *file;
 	size_t i;
@@ -170,6 +171,19 @@ static int run_test(FILE *trace, const char *path)
 
 			fprintf(stderr, "Invalid boundary header\n");
 			goto out;
+		}
+		else if (!strncmp(line, "X-Buffer-Size: ", 15)) {
+			unsigned int n = 0;
+			char *p = NULL;
+
+			n = strtoul(line + 15, &p, 0);
+
+			if (line + 15 == p || *p != '\r' || n < 1 || n > sizeof(line)) {
+				fprintf(stderr, "Invalid buffer size\n");
+				goto out;
+			}
+
+			ctx.bufsize = n;
 		}
 		else if (!strncmp(line, "X-Expect-", 9)) {
 			char *p = NULL, **q = NULL;
@@ -219,7 +233,7 @@ static int run_test(FILE *trace, const char *path)
 
 	lh_mpart_set_callback(p, test_callback, &ctx);
 
-	while ((i = fread(line, 1, sizeof(line), file)) > 0) {
+	while ((i = fread(line, 1, ctx.bufsize, file)) > 0) {
 		ok = lh_mpart_parse(p, line, i);
 
 		if (!ok)
