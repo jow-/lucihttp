@@ -585,8 +585,12 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 		break;
 
 	case LH_MP_S_PART_BOUNDARY:
-		if ((p->index < 2) ? (c != '-')
-		                   : (c != boundary[p->index - 2])) {
+		if ((p->index < 2) ? (c != '-') : (c != boundary[p->index - 2])) {
+			if (c != '\r') {
+				p->lookbehind[p->index + 2] = c;
+				p->index++;
+			}
+
 			if (p->flags & LH_MP_F_IN_PART) {
 				if (p->flags & LH_MP_F_BUFFERING) {
 					lh_mpart_get_token(p, LH_MP_T_DATA, &l);
@@ -605,13 +609,15 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 				}
 			}
 
-			p->offset = off;
-			p->lookbehind[0] = c;
-
-			if (c == '\r')
+			if (c == '\r') {
+				p->offset = off;
+				p->lookbehind[0] = c;
 				lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY_START);
-			else
+			}
+			else {
+				p->offset = off + 1;
 				lh_mpart_set_state(p, LH_MP_S_PART_DATA);
+			}
 		}
 		else {
 			p->lookbehind[p->index + 2] = c;

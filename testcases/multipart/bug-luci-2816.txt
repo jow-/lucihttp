@@ -1,0 +1,12 @@
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary0IAtYXyyDSLQg8kg
+Content-Length: 136
+X-Comment: Test parsing CR at buffer boundary (https://github.com/openwrt/luci/issues/2816)
+X-Expect-Part-Value: urlencoded:A%0D%0AB
+X-Buffer-Size: 2
+
+------WebKitFormBoundary0IAtYXyyDSLQg8kg
+Content-Disposition: form-data; name="1"
+
+A
+B
+------WebKitFormBoundary0IAtYXyyDSLQg8kg--
