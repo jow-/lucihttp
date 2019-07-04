@@ -46,6 +46,15 @@ static const char *lh_mpart_state_descriptions[] = {
 	"parser error state"
 };
 
+static const char *lh_mpart_token_names[] = {
+	"header name",
+	"header value",
+	"data",
+	"boundary 1",
+	"boundary 2",
+	"boundary 3"
+};
+
 
 static char *
 lh_mpart_char_esc(int c)
@@ -138,6 +147,12 @@ lh_mpart_set_token(struct lh_mpart *p, enum lh_mpart_token_type type,
 		memcpy(tok->value + tok->len, buf, len);
 		tok->value[tok->len + len] = 0;
 		tok->len += len;
+
+		if (p->trace) {
+			fprintf(p->trace, "Buffer %d (%s) %s ", type,
+			        lh_mpart_token_names[type], clear ? "set" : "append");
+			lh_mpart_dump(p->trace, "data", buf, len);
+		}
 	}
 
 	return true;
