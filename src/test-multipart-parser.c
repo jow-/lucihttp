@@ -168,10 +168,11 @@ static bool test_callback(struct lh_mpart *p,
 	return true;
 }
 
-static int run_test(FILE *trace, const char *path, const char *dumpprefix)
+static int run_test(FILE *trace, const char *path, const char *dumpprefix,
+                    size_t bufsize)
 {
 	struct test_context ctx = {
-		.bufsize = 128,
+		.bufsize = bufsize ? bufsize : 128,
 		.dumpprefix = dumpprefix,
 		.dumpfd = -1
 	};
@@ -206,7 +207,7 @@ static int run_test(FILE *trace, const char *path, const char *dumpprefix)
 			fprintf(stderr, "Invalid boundary header\n");
 			goto out;
 		}
-		else if (!strncmp(line, "X-Buffer-Size: ", 15)) {
+		else if (!bufsize && !strncmp(line, "X-Buffer-Size: ", 15)) {
 			unsigned int n = 0;
 			char *p = NULL;
 
@@ -337,7 +338,7 @@ out:
 	return rv;
 }
 
-static int run_tests(FILE *trace, const char *dir)
+static int run_tests(FILE *trace, const char *dir, size_t bufsize)
 {
 	DIR *tests;
 	char path[128];
@@ -355,7 +356,7 @@ static int run_tests(FILE *trace, const char *dir)
 		if (entry->d_type == DT_REG) {
 			snprintf(path, sizeof(path), "%s/%s", dir, entry->d_name);
 
-			if (run_test(trace, path, NULL))
+			if (run_test(trace, path, NULL, bufsize))
 				fails++;
 		}
 	}
@@ -375,13 +376,24 @@ int main(int argc, char **argv)
 	const char *testfile = NULL;
 	const char *testdir = NULL;
 	const char *dumpprefix = NULL;
+	size_t bufsize = 0;
 	FILE *trace = NULL;
 	int opt;
 
-	while ((opt = getopt(argc, argv, "vd:f:x:")) != -1) {
+	while ((opt = getopt(argc, argv, "vb:d:f:x:")) != -1) {
 		switch (opt) {
 		case 'v':
 			trace = stderr;
+			break;
+
+		case 'b':
+			bufsize = strtoul(optarg, NULL, 0);
+
+			if (bufsize == 0 || bufsize > 4096) {
+				fprintf(stderr, "Invalid buffer size\n");
+				return 1;
+			}
+
 			break;
 
 		case 'd':
@@ -397,7 +409,8 @@ int main(int argc, char **argv)
 			break;
 
 		default:
-			fprintf(stderr, "Usage: %s [-v] {-d <dir>|[-x pfx] -f <file>}\n",
+			fprintf(stderr,
+			        "Usage: %s [-v] [-b #] {-d <dir>|[-x pfx] -f <file>}\n",
 			        argv[0]);
 
 			return 1;
@@ -405,10 +418,10 @@ int main(int argc, char **argv)
 	}
 
 	if (testdir) {
-		return run_tests(trace, testdir);
+		return run_tests(trace, testdir, bufsize);
 	}
 	else if (testfile) {
-		return run_test(trace, testfile, dumpprefix);
+		return run_test(trace, testfile, dumpprefix, bufsize);
 	}
 
 	fprintf(stderr, "One of -d or -f is required\n");
