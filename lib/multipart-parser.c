@@ -264,6 +264,12 @@ lh_mpart_new(FILE *trace)
 
 	p = calloc(1, sizeof(*p));
 
+	return lh_mpart_init(p, trace);
+}
+
+struct lh_mpart *
+lh_mpart_init(struct lh_mpart *p, FILE *trace)
+{
 	if (!p)
 		return NULL;
 

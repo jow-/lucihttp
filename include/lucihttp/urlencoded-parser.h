@@ -85,6 +85,9 @@ struct lh_urldec
 struct lh_urldec *
 lh_urldec_new(FILE *);
 
+struct lh_urldec *
+lh_urldec_init(struct lh_urldec *, FILE *);
+
 void
 lh_urldec_set_callback(struct lh_urldec *, lh_urldec_callback, void *);
 

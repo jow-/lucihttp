@@ -157,6 +157,12 @@ lh_urldec_new(FILE *trace)
 
 	p = calloc(1, sizeof(*p));
 
+	return lh_urldec_init(p, trace);
+}
+
+struct lh_urldec *
+lh_urldec_init(struct lh_urldec *p, FILE *trace)
+{
 	if (!p)
 		return NULL;
 

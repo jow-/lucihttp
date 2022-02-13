@@ -111,6 +111,9 @@ struct lh_mpart
 struct lh_mpart *
 lh_mpart_new(FILE *);
 
+struct lh_mpart *
+lh_mpart_init(struct lh_mpart *, FILE *);
+
 void
 lh_mpart_set_callback(struct lh_mpart *, lh_mpart_callback, void *);
 

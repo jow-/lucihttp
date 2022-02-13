@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.6)
 PROJECT(liblucihttp C)
 
 OPTION(BUILD_LUA "build Lua binding" ON)
+OPTION(BUILD_UCODE "build ucode binding" ON)
 OPTION(BUILD_TESTS "build test programs" ON)
 
 ADD_DEFINITIONS(-Os -ggdb -Wall -Werror --std=gnu99 -Wmissing-declarations -Wno-format-truncation)
@@ -60,6 +61,7 @@ IF(BUILD_LUA)
 
 	SET_TARGET_PROPERTIES(liblucihttp-lua PROPERTIES
 		OUTPUT_NAME lucihttp
+		LIBRARY_OUTPUT_DIRECTORY lua
 		PREFIX "")
 
 	TARGET_LINK_LIBRARIES(liblucihttp-lua liblucihttp ${LUA_LIBRARIES})
@@ -71,6 +73,22 @@ IF(BUILD_LUA)
 	INSTALL(FILES
 		include/lucihttp/lua.h
 		DESTINATION include/lucihttp)
+ENDIF()
+
+IF(BUILD_UCODE)
+	ADD_LIBRARY(liblucihttp-ucode SHARED
+		lib/ucode.c)
+
+	SET_TARGET_PROPERTIES(liblucihttp-ucode PROPERTIES
+		OUTPUT_NAME lucihttp
+		LIBRARY_OUTPUT_DIRECTORY ucode
+		PREFIX "")
+
+	TARGET_LINK_LIBRARIES(liblucihttp-ucode liblucihttp ucode)
+
+	INSTALL(TARGETS
+		liblucihttp-ucode
+		LIBRARY DESTINATION lib/ucode)
 ENDIF()
 
 
