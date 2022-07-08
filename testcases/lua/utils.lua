@@ -38,7 +38,7 @@ local encode_tests = {
 local decode_tests = {
 	"test%20test%test+test",
 		{ },
-		"test test%test test",
+		"test test%test+test",
 
 	"test%20test%test+test",
 		{ "DECODE_STRICT" },
@@ -46,7 +46,7 @@ local decode_tests = {
 
 	"test%20test%test+test",
 		{ "DECODE_IF_NEEDED" },
-		"test test%test test",
+		"test test%test+test",
 
 	"test test%test test",
 		{ "DECODE_IF_NEEDED" },
@@ -54,7 +54,11 @@ local decode_tests = {
 
 	"test%20test%test+test",
 		{ "DECODE_KEEP_PLUS" },
-		"test test%test+test"
+		"test test%test+test",
+
+	"test%20test%test+test",
+		{ "DECODE_PLUS" },
+		"test test%test test"
 }
 
 local header_tests = {
