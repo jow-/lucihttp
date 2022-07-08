@@ -93,7 +93,11 @@ let header_tests = [
 
 	"foo/bar; param=test",
 		null,
-		"foo/bar"
+		"foo/bar",
+
+	"foo/bar; foo=x; foobar=y",
+		"foobar",
+		"y"
 ];
 
 print("Performing URL encode tests ");

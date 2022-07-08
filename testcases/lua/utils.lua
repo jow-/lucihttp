@@ -104,7 +104,11 @@ local header_tests = {
 
 	"foo/bar; param=test",
 		nil,
-		"foo/bar"
+		"foo/bar",
+
+	"foo/bar; foo=x; foobar=y",
+		"foobar",
+		"y"
 }
 
 io.write("Performing URL encode tests ")

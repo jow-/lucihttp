@@ -253,6 +253,7 @@ lh_header_attribute(const char *s, size_t len, const char *attr,
 	const char *tspecial = "()<>@,;:\\\"/[]?=";
 	const char *nameptr = NULL, *valueptr = NULL;
 	size_t i = 0, namelen = 0, valuelen = 0;
+	size_t alen = attr ? strlen(attr) : 0;
 	char *value = NULL;
 	int c = 0;
 
@@ -329,7 +330,7 @@ lh_header_attribute(const char *s, size_t len, const char *attr,
 				state = NSTART;
 				valuelen = s + i - valueptr;
 
-				if (attr && nameptr && namelen && valueptr &&
+				if (attr && nameptr && valueptr && namelen == alen &&
 				    !strncasecmp(nameptr, attr, namelen))
 					goto found;
 			}
@@ -352,7 +353,7 @@ lh_header_attribute(const char *s, size_t len, const char *attr,
 			if (c == ';' || c == '\r' || c == EOF) {
 				state = NSTART;
 
-				if (attr && nameptr && namelen && valueptr &&
+				if (attr && nameptr && valueptr && namelen == alen &&
 				    !strncasecmp(nameptr, attr, namelen))
 					goto found;
 			}
