@@ -567,25 +567,29 @@ lh_mpart_step(struct lh_mpart *p, const char *buf, size_t off, int c,
 			lh_mpart_set_state(p, LH_MP_S_PART_BOUNDARY);
 		}
 		else {
+			valuelen = 1 + (c != '\r');
+
 			if (p->flags & LH_MP_F_IN_PART) {
 				if (p->flags & LH_MP_F_BUFFERING) {
 					lh_mpart_get_token(p, LH_MP_T_DATA, &l);
 
-					if (l + 2 > p->size_limit)
+					if (l + valuelen > p->size_limit)
 						return lh_mpart_error(p, off,
 						                      "the value exceeds the "
 						                      "maximum allow size");
 
 					lh_mpart_set_token(p, LH_MP_T_DATA, false,
-					                   p->lookbehind, 2);
+					                   p->lookbehind, valuelen);
 				}
 				else {
-					lh_mpart_invoke(p, PART_DATA, p->lookbehind, 2);
+					lh_mpart_invoke(p, PART_DATA, p->lookbehind, valuelen);
 				}
 			}
 
-			p->offset = off + 1;
-			lh_mpart_set_state(p, LH_MP_S_PART_DATA);
+			if (c != '\r') {
+				p->offset = off + 1;
+				lh_mpart_set_state(p, LH_MP_S_PART_DATA);
+			}
 		}
 
 		break;

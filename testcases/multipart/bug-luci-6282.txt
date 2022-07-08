@@ -1,0 +1,9 @@
+Content-Type: multipart/form-data; boundary=123456
+X-Expect-Part-Value: urlencoded:%9E%0D
+
+--123456
+Content-Disposition: form-data; name="binfile"
+Content-Type: application/octet-stream
+
+ž
+--123456--
